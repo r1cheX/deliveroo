@@ -1,5 +1,5 @@
 import { View, Text, Image, TextInput, ScrollView } from 'react-native'
-import React, { useLayoutEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
@@ -10,17 +10,29 @@ import {
 } from "react-native-heroicons/outline";
 import Categories from '../components/Categories';
 import FeaturedRow from '../components/FeaturedRow';
+import { urlFor, client } from '../sanity';
 
 // Moraleja: Siempre hay una solución, debes ver los nombres bien de las librerias
 const HomeScreen = () => {
 
     const navigation = useNavigation();
+    const [featuredCategories, setfeaturedCategories] = useState([])
 
     useLayoutEffect(() => {
         navigation.setOptions({
             headerShown: false,
         });
     }, []);
+
+
+    useEffect(() => {
+        const query = '*[_type == "featured"]{...,restaurants[]->{...,dishes[]->}}';
+        client.fetch(query)
+            .then((data) => {
+                // console.log(data)
+                setfeaturedCategories(data)
+            })
+    }, [])
 
     return (
         <SafeAreaView className="bg-white pt-5">
@@ -63,23 +75,14 @@ const HomeScreen = () => {
                 <Categories />
 
                 {/* Featured Rows */}
-                <FeaturedRow
-                    id="Testing 1"
-                    title="Featured"
-                    description="Paid placements our partners"
-                />
-                <FeaturedRow
-                    id="Testing 2"
-                    title="Tasty Discounts"
-                    description="Paid placements our partners"
-                />
-                <FeaturedRow
-                    id="Testing 3"
-                    title="Offers near you"
-                    description="Paid placements our partners"
-                />
-
-
+                {featuredCategories?.map((category) => (
+                    <FeaturedRow
+                        key={category._id}
+                        id={category._id}
+                        title={category.name}
+                        description={category.short_description}
+                    />
+                ))}
             </ScrollView>
         </SafeAreaView>
     )
